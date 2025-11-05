@@ -1,0 +1,1 @@
+this is a roblox "hack" script you can use in executors, you can select players and this script is good for "battlegrounds games bc when you select a player your camera is following the player recoomended to use with shiftlock!
