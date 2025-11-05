@@ -1,0 +1,270 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- Hangok
+local soundOn = Instance.new("Sound")
+soundOn.SoundId = "rbxassetid://9118822679"
+soundOn.Volume = 0.5
+soundOn.Parent = player:WaitForChild("PlayerGui")
+
+local soundOff = Instance.new("Sound")
+soundOff.SoundId = "rbxassetid://9118822966"
+soundOff.Volume = 0.5
+soundOff.Parent = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+screenGui.Name = "FancyAimbotUI"
+screenGui.ResetOnSpawn = false
+
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Size = UDim2.new(0, 270, 0, 370)
+mainFrame.Position = UDim2.new(0, 80, 0, 40)
+mainFrame.BackgroundColor3 = Color3.new(0,0,0)
+mainFrame.BorderSizePixel = 0
+mainFrame.ClipsDescendants = true
+mainFrame.Name = "MainFrame"
+local corner = Instance.new("UICorner", mainFrame)
+corner.CornerRadius = UDim.new(0, 12)
+
+local outline = Instance.new("Frame", screenGui)
+outline.Size = mainFrame.Size + UDim2.new(0, 6, 0, 6)
+outline.Position = mainFrame.Position - UDim2.new(0, 3, 0, 3)
+outline.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+outline.ZIndex = mainFrame.ZIndex - 1
+outline.Name = "Outline"
+local outlineCorner = Instance.new("UICorner", outline)
+outlineCorner.CornerRadius = UDim.new(0, 15)
+
+mainFrame:GetPropertyChangedSignal("Position"):Connect(function()
+    outline.Position = mainFrame.Position - UDim2.new(0, 3, 0, 3)
+end)
+mainFrame:GetPropertyChangedSignal("Size"):Connect(function()
+    outline.Size = mainFrame.Size + UDim2.new(0, 6, 0, 6)
+end)
+
+local line = Instance.new("Frame", mainFrame)
+line.Size = UDim2.new(1, 0, 0, 3)
+line.Position = UDim2.new(0, 0, 0, 0)
+line.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+line.ZIndex = 3
+
+local closeButton = Instance.new("TextButton", mainFrame)
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -35, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 20
+closeButton.AutoButtonColor = false
+closeButton.ZIndex = 5
+Instance.new("UICorner", closeButton).CornerRadius = UDim.new(0, 6)
+closeButton.MouseEnter:Connect(function()
+    TweenService:Create(closeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 70, 70)}):Play()
+end)
+closeButton.MouseLeave:Connect(function()
+    TweenService:Create(closeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(200, 50, 50)}):Play()
+end)
+
+local minimizeButton = Instance.new("TextButton", mainFrame)
+minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+minimizeButton.Position = UDim2.new(1, -70, 0, 5)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+minimizeButton.Text = "−"
+minimizeButton.TextColor3 = Color3.new(1, 1, 1)
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.TextSize = 26
+minimizeButton.AutoButtonColor = false
+minimizeButton.ZIndex = 5
+Instance.new("UICorner", minimizeButton).CornerRadius = UDim.new(0, 6)
+minimizeButton.MouseEnter:Connect(function()
+    TweenService:Create(minimizeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70, 70, 70)}):Play()
+end)
+minimizeButton.MouseLeave:Connect(function()
+    TweenService:Create(minimizeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 50)}):Play()
+end)
+
+-- Dragging functionality
+local dragging = false
+local dragInput, mousePos, framePos
+
+local function update(input)
+    local delta = input.Position - mousePos
+    local newPos = UDim2.new(
+        0,
+        math.clamp(framePos.X.Offset + delta.X, 0, workspace.CurrentCamera.ViewportSize.X - mainFrame.AbsoluteSize.X),
+        0,
+        math.clamp(framePos.Y.Offset + delta.Y, 0, workspace.CurrentCamera.ViewportSize.Y - mainFrame.AbsoluteSize.Y)
+    )
+    mainFrame.Position = newPos
+    outline.Position = newPos - UDim2.new(0, 3, 0, 3)
+end
+
+local function inputBegan(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        mousePos = input.Position
+        framePos = mainFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end
+
+mainFrame.InputBegan:Connect(inputBegan)
+outline.InputBegan:Connect(inputBegan)
+
+local function inputChanged(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end
+
+mainFrame.InputChanged:Connect(inputChanged)
+outline.InputChanged:Connect(inputChanged)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+local toggleButton = Instance.new("TextButton", mainFrame)
+toggleButton.Size = UDim2.new(0.8, 0, 0, 40)
+toggleButton.Position = UDim2.new(0.1, 0, 0, 50)
+toggleButton.Text = "Aimbot: OFF"
+toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 16
+local toggleUICorner = Instance.new("UICorner", toggleButton)
+toggleUICorner.CornerRadius = UDim.new(0, 10)
+
+local aimbotEnabled = false
+local selectedPlayer = nil
+
+toggleButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    toggleButton.Text = aimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+    if aimbotEnabled then
+        soundOn:Play()
+    else
+        soundOff:Play()
+    end
+end)
+
+local playerDropdown = Instance.new("TextButton", mainFrame)
+playerDropdown.Size = UDim2.new(0.8, 0, 0, 40)
+playerDropdown.Position = UDim2.new(0.1, 0, 0, 120)
+playerDropdown.Text = "Válassz játékost"
+playerDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+playerDropdown.TextColor3 = Color3.new(1, 1, 1)
+playerDropdown.Font = Enum.Font.Gotham
+playerDropdown.TextSize = 14
+Instance.new("UICorner", playerDropdown).CornerRadius = UDim.new(0, 10)
+
+local playerList = Instance.new("ScrollingFrame", mainFrame)
+playerList.Size = UDim2.new(0.8, 0, 0, 150)
+playerList.Position = UDim2.new(0.1, 0, 0, 170)
+playerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerList.ScrollBarThickness = 6
+playerList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+playerList.Visible = false
+Instance.new("UICorner", playerList).CornerRadius = UDim.new(0, 8)
+
+local layout = Instance.new("UIListLayout", playerList)
+layout.Padding = UDim.new(0, 5)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function refreshPlayers()
+    playerList:ClearAllChildren()
+    layout = Instance.new("UIListLayout", playerList)
+    layout.Padding = UDim.new(0, 5)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, -10, 0, 30)
+            btn.Text = plr.DisplayName -- itt a DisplayName
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.TextColor3 = Color3.new(1, 1, 1)
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 14
+            btn.Parent = playerList
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+            btn.MouseButton1Click:Connect(function()
+                selectedPlayer = plr
+                playerDropdown.Text = "Kiválasztva: " .. plr.DisplayName
+                playerList.Visible = false
+            end)
+        end
+    end
+
+    playerList.CanvasSize = UDim2.new(0, 0, 0, (#Players:GetPlayers()-1) * 35)
+end
+
+playerDropdown.MouseButton1Click:Connect(function()
+    playerList.Visible = not playerList.Visible
+end)
+
+Players.PlayerAdded:Connect(refreshPlayers)
+Players.PlayerRemoving:Connect(refreshPlayers)
+refreshPlayers()
+
+closeButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = false
+    toggleButton.Text = "Aimbot: OFF"
+    soundOff:Play()
+    screenGui.Enabled = false
+end)
+
+local minimized = false
+minimizeButton.MouseButton1Click:Connect(function()
+    if minimized then
+        for _, obj in pairs(mainFrame:GetChildren()) do
+            if obj:IsA("GuiObject") and obj ~= closeButton and obj ~= minimizeButton and obj ~= line then
+                obj.Visible = true
+            end
+        end
+        mainFrame.Size = UDim2.new(0, 270, 0, 370)
+        minimized = false
+    else
+        for _, obj in pairs(mainFrame:GetChildren()) do
+            if obj:IsA("GuiObject") and obj ~= closeButton and obj ~= minimizeButton and obj ~= line then
+                obj.Visible = false
+            end
+        end
+        mainFrame.Size = UDim2.new(0, 270, 0, 40)
+        minimized = true
+    end
+end)
+
+local footerLabel = Instance.new("TextLabel", mainFrame)
+footerLabel.Size = UDim2.new(1, 0, 0, 25)
+footerLabel.Position = UDim2.new(0, 0, 1, -25)
+footerLabel.BackgroundTransparency = 1
+footerLabel.Text = "Made by Hevox"
+footerLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+footerLabel.Font = Enum.Font.GothamBold
+footerLabel.TextSize = 14
+footerLabel.TextStrokeColor3 = Color3.new(0,0,0)
+footerLabel.TextStrokeTransparency = 0.7
+footerLabel.TextYAlignment = Enum.TextYAlignment.Center
+footerLabel.ZIndex = 5
+
+RunService.RenderStepped:Connect(function()
+    if aimbotEnabled and selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetPos = selectedPlayer.Character.HumanoidRootPart.Position
+        camera.CFrame = CFrame.new(camera.CFrame.Position, targetPos)
+    end
+end)
